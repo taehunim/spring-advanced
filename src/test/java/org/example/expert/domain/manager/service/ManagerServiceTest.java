@@ -12,6 +12,7 @@ import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.enums.UserRole;
 import org.example.expert.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -39,14 +40,22 @@ class ManagerServiceTest {
     private ManagerService managerService;
 
     @Test
-    public void manager_목록_조회_시_Todo가_없다면_NPE_에러를_던진다() {
+    public void manager_목록_조회_시_Todo가_없다면_IRE_에러를_던진다() {
+
         // given
         long todoId = 1L;
+
+        // todoRepository의 findById 매서드가 todoId를 입력 받았을 때 Optional에 emtpy를 담아 반환해라.
         given(todoRepository.findById(todoId)).willReturn(Optional.empty());
 
-        // when & then
-        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () -> managerService.getManagers(todoId));
-        assertEquals("Manager not found", exception.getMessage());
+        // when
+        InvalidRequestException exception = assertThrows(
+                InvalidRequestException.class,
+                () -> managerService.getManagers(todoId)
+        );
+
+        // then
+        org.assertj.core.api.Assertions.assertThat(exception.getMessage()).isEqualTo("Todo not found");
     }
 
     @Test
@@ -65,7 +74,7 @@ class ManagerServiceTest {
 
         // when & then
         InvalidRequestException exception = assertThrows(InvalidRequestException.class, () ->
-            managerService.saveManager(authUser, todoId, managerSaveRequest)
+                managerService.saveManager(authUser, todoId, managerSaveRequest)
         );
 
         assertEquals("담당자를 등록하려고 하는 유저가 일정을 만든 유저가 유효하지 않습니다.", exception.getMessage());
@@ -94,7 +103,8 @@ class ManagerServiceTest {
         assertEquals(mockManager.getUser().getEmail(), managerResponses.get(0).getUser().getEmail());
     }
 
-    @Test // 테스트코드 샘플
+    @Test
+        // 테스트코드 샘플
     void todo가_정상적으로_등록된다() {
         // given
         AuthUser authUser = new AuthUser(1L, "a@a.com", UserRole.USER);
