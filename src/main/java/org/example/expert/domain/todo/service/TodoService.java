@@ -14,6 +14,7 @@ import org.example.expert.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +52,13 @@ public class TodoService {
     public Page<TodoResponse> getTodos(int page, int size) {
         Pageable pageable = PageRequest.of(page - 1, size);
 
+        // 모든 todo 엔티티를 가져온다.
+        // 1개의 쿼리가 나가게된다.
+        // todo 엔티티의 User user 필드는 Lazy loding 이 설정되어있어 참조값을 가진 프록시 객체가 호출된다.
+        // 해결책 1 : 엔티티의 User user 필드를 @ManyToOne(fetch = FetchType.EAGER) 로 바꾼다.
+        // 해결책 2 : Todo 뿐만 아니라 User 도 단일 쿼리로 가져올 수 있게 Fetch Join을 사용한다.
+        // 해결책 3 : @EntityGraph를 설정하여 todo 엔티티를 조회할 때 함께 로드할 연관 엔티티 User를 설정해준다.
+
         Page<Todo> todos = todoRepository.findAllByOrderByModifiedAtDesc(pageable);
 
         return todos.map(todo -> new TodoResponse(
@@ -58,6 +66,8 @@ public class TodoService {
                 todo.getTitle(),
                 todo.getContents(),
                 todo.getWeather(),
+
+                // User 필드의 데이터를 조회하기 위해서 참조값을 활용해 쿼리가 todo 갯수 만큼 발생하게 된다.
                 new UserResponse(todo.getUser().getId(), todo.getUser().getEmail()),
                 todo.getCreatedAt(),
                 todo.getModifiedAt()
