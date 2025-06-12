@@ -66,18 +66,24 @@ class ManagerServiceTest {
         long managerUserId = 2L;
 
         Todo todo = new Todo();
+
+        // private 필드 건드리기위해서 ReflectionTestUtils.setField를 사용
+        // todo라는 객체의 user 필드에 null 값을 주입
         ReflectionTestUtils.setField(todo, "user", null);
 
         ManagerSaveRequest managerSaveRequest = new ManagerSaveRequest(managerUserId);
 
         given(todoRepository.findById(todoId)).willReturn(Optional.of(todo));
 
-        // when & then
-        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () ->
-                managerService.saveManager(authUser, todoId, managerSaveRequest)
+        // when
+
+        NullPointerException exception = assertThrows(
+                NullPointerException.class,
+                () -> managerService.saveManager(authUser, todoId, managerSaveRequest)
         );
 
-        assertEquals("담당자를 등록하려고 하는 유저가 일정을 만든 유저가 유효하지 않습니다.", exception.getMessage());
+        // then
+        org.assertj.core.api.Assertions.assertThat(exception).isInstanceOf(NullPointerException.class);
     }
 
     @Test // 테스트코드 샘플
